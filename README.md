@@ -1,38 +1,54 @@
-# PHAMASAFTEY
+# Pharma Safety Tri-Agent System
 
-⭐ 1. “Pharma Safety Tri‑Agent System”
-For pharmaceutical companies handling adverse drug reaction (ADR) reports.
-Why this is niche
-Pharma companies legally must process ADR reports quickly and accurately.
-This is a £10B+ compliance market.
+A multi-agent customer support and research system built for the Google A2A Hackathon.
 
-Agents
-Personal Agent (PA)
+This project explores how three specialised agents can communicate over the Agent-to-Agent protocol to handle pharmaceutical safety reports, such as adverse drug reaction reports, missing patient details, medicine-related complaints, and regulatory escalation cases.
 
-Parses patient or doctor messages
+## Problem
 
-Extracts symptoms, medication, dosage, timeline
+Pharmaceutical companies receive large volumes of safety-related messages from patients, doctors, pharmacists, and support teams. These reports often contain incomplete, emotional, or unstructured information.
 
-Detects severity (e.g., “life‑threatening”, “mild”)
+In regulated healthcare environments, missing important details can delay escalation, risk patient safety, and create compliance issues.
 
-Writes structured ADR report into Redis
+## Solution
 
-Customer Service Agent (CSA)
+The Pharma Safety Tri-Agent System uses three cooperating agents:
 
-Determines if the case must be escalated
+1. **Personal Agent**
+2. **Customer Service Agent**
+3. **Research Agent**
 
-Checks if required fields are missing
+Together, they transform an unstructured customer message into a structured safety case, research the relevant medical and regulatory context, and recommend the correct next action.
 
-Requests more info via PA
+## Agent Roles
 
-Sends research queries to RA
+### 1. Personal Agent
 
-Research Agent (RA)
+The Personal Agent receives the original customer or patient message.
 
-Looks up known side effects
+Its role is to understand and structure the message before passing it to the Customer Service Agent.
 
-Checks drug–drug interactions
+It extracts:
 
-Retrieves regulatory rules (MHRA, EMA, FDA)
+- Patient concern
+- Medicine name
+- Symptoms
+- Dosage
+- Timeline
+- Severity
+- Missing information
+- Emotional tone
+- Urgency level
 
-Returns structured risk assessment
+Example output:
+
+```json
+{
+  "case_type": "adverse_drug_reaction",
+  "medicine": "ExampleMed",
+  "symptoms": ["dizziness", "nausea"],
+  "severity": "moderate",
+  "missing_fields": ["dosage", "patient_age"],
+  "urgency": "high",
+  "summary": "Patient reports dizziness and nausea after taking ExampleMed."
+}
