@@ -1,127 +1,152 @@
 import Link from "next/link";
-import { PageHeader, SiteNav } from "@/components/pdf-analyst/Brand";
+import { AgentArchitecture, PageHeader, SiteNav } from "@/components/pdf-analyst/Brand";
 
 export default function Home() {
   return (
     <>
       <SiteNav active="home" />
       <PageHeader
-        eyebrow="A2A Hackathon Track · Rho-Bank"
+        eyebrow="PhamaSafety · London A2A Hackathon"
         meta={
           <span className="pill">
-            <span className="dot" /> Track 1
+            <span className="dot" /> multi-agent demo
           </span>
         }
         title={
           <>
-            Two agents, one harness —{" "}
+            From unstructured safety reports to{" "}
             <br className="hidden md:inline" />
             <span
               className="bg-clip-text text-transparent"
               style={{ backgroundImage: "var(--brand-gradient)" }}
             >
-              personal + customer service over A2A.
+              structured cases & escalation.
             </span>
           </>
         }
-        subtitle="Personal agent (:9001) acts for the user and talks to customer service (:9002) over the Agent-to-Agent protocol. CS searches a 698-document Redis knowledge base. Scored by the a2a-hack harness."
+        subtitle="Three cooperating agents transform patient, doctor, and pharmacist messages into structured pharmacovigilance cases — with generative UI for intake dashboards and follow-up analysis."
       />
 
       <main className="flex-1 max-w-[1320px] mx-auto px-6 py-12 w-full">
-        <section className="surface p-6 mb-10">
-          <h2 className="text-[18px] font-semibold tracking-tight">
-            Primary dev loop (A2A track)
-          </h2>
-          <ol className="mt-4 space-y-2 text-[14px] text-[var(--muted)] list-decimal list-inside">
-            <li>
-              <code className="mono text-[12px]">copy .env.example .env</code> — set{" "}
-              <code className="mono text-[12px]">GOOGLE_API_KEY</code>
-            </li>
-            <li>
-              <code className="mono text-[12px]">docker compose up --build</code>
-            </li>
-            <li>
-              Clone{" "}
-              <a
-                href="https://github.com/a2anet/a2a-hackathon"
-                className="text-[var(--ink)] underline"
-              >
-                a2a-hackathon
-              </a>{" "}
-              and run{" "}
-              <code className="mono text-[12px]">a2a-hack smoke</code>
-            </li>
-          </ol>
-          <p className="mt-4 mono text-[12px] text-[var(--muted)]">
-            Full guide: <strong>A2A.md</strong> in the repo root
-          </p>
+        <section>
+          <span className="mono text-[11px] uppercase tracking-[0.14em] text-[var(--muted-2)]">
+            Agent architecture
+          </span>
+          <AgentArchitecture />
         </section>
 
-        <div className="grid md:grid-cols-2 gap-5">
-          <AgentCard
-            name="Personal Agent"
-            port=":9001"
-            blurb="User's Rho-Bank assistant. Fetches user env tools, contacts CS via A2A with shared contextId."
+        <div className="grid md:grid-cols-2 gap-5 mt-12">
+          <ModeCard
+            href="/fixed"
+            badge="01 · CASE INTAKE"
+            title="Structured safety dashboard"
+            blurb="Describe an adverse reaction, missing patient details, or complaint. The intake agent extracts fields and paints a fixed-schema case dashboard."
+            bullets={[
+              "Extracts case type, medicine, symptoms, severity, urgency",
+              "Highlights missing fields before escalation",
+              "Works offline with OFFLINE=1 — no API key required for demo",
+            ]}
+            cta="Open case intake"
           />
-          <AgentCard
-            name="CS Agent"
-            port=":9002"
-            blurb="Bank customer service. Policy + bank env tools + Redis KB (BM25 + vector search)."
+          <ModeCard
+            href="/dynamic"
+            badge="02 · FOLLOW-UP Q&A"
+            title="Dynamic analysis surfaces"
+            blurb="Ask follow-up questions — escalation criteria, symptom timelines, regulatory paths — and the agent invents the UI from the catalog."
+            bullets={[
+              "Charts for symptom breakdown and timelines",
+              "Callouts for regulatory escalation guidance",
+              "Same 21-component A2UI catalog",
+            ]}
+            cta="Open follow-up Q&A"
           />
         </div>
 
-        <section className="mt-14">
-          <span className="mono text-[11px] uppercase tracking-[0.14em] text-[var(--muted-2)]">
-            Optional — Generative UI (Track 2)
-          </span>
-          <div className="grid md:grid-cols-2 gap-5 mt-4">
-            <Link href="/fixed" className="surface p-5 hover:border-[var(--lilac)] transition">
-              <span className="mono text-[11px] text-[var(--muted-2)]">/fixed</span>
-              <p className="mt-1 text-[14px] text-[var(--muted)]">
-                LangGraph + A2UI intake demo on :8123 (secondary)
-              </p>
-            </Link>
-            <Link href="/dynamic" className="surface p-5 hover:border-[var(--lilac)] transition">
-              <span className="mono text-[11px] text-[var(--muted-2)]">/dynamic</span>
-              <p className="mt-1 text-[14px] text-[var(--muted)]">
-                Dynamic A2UI follow-up surfaces (secondary)
-              </p>
-            </Link>
-          </div>
+        <section className="mt-14 surface p-6">
+          <h2 className="text-[18px] font-semibold tracking-tight">
+            Running the A2A agents locally
+          </h2>
+          <p className="mt-2 text-[14px] text-[var(--muted)] max-w-3xl">
+            The UI runs on{" "}
+            <code className="mono text-[12px]">pnpm dev</code> (Next.js + LangGraph
+            on :8123). Start the Personal Agent (:9001) and CS Agent (:9002) with{" "}
+            <code className="mono text-[12px]">docker compose up</code> or the scripts
+            in <code className="mono text-[12px]">scripts/run-a2a-agents.ps1</code>.
+            Add your <code className="mono text-[12px]">GEMINI_API_KEY</code> when
+            ready for live LLM calls.
+          </p>
+        </section>
+
+        <section className="mt-14 grid md:grid-cols-3 gap-3">
+          <Spec k="Frontend" v="Next.js 16 · CopilotKit · A2UI v0.9 renderer" />
+          <Spec k="A2A agents" v="Google ADK · Personal :9001 · CS :9002" />
+          <Spec k="Research" v="Redis KB · BM25 + vector · internal to CS" />
         </section>
       </main>
 
       <footer className="border-t border-[var(--line)] py-6 mt-10">
         <div className="max-w-[1320px] mx-auto px-6 text-xs text-[var(--muted)] flex items-center justify-between">
-          <span>
-            Template:{" "}
-            <a href="https://github.com/a2anet/a2a-hackathon-template" className="underline">
-              a2a-hackathon-template
-            </a>
-          </span>
-          <span className="mono">A2A Track 1</span>
+          <span>PhamaSafety · pharmaceutical safety reporting demo</span>
+          <span className="mono">Track 1 + 2</span>
         </div>
       </footer>
     </>
   );
 }
 
-function AgentCard({
-  name,
-  port,
+function ModeCard({
+  href,
+  badge,
+  title,
   blurb,
+  bullets,
+  cta,
 }: {
-  name: string;
-  port: string;
+  href: string;
+  badge: string;
+  title: string;
   blurb: string;
+  bullets: string[];
+  cta: string;
 }) {
   return (
-    <div className="surface p-6">
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-[var(--ink)]">{name}</h3>
-        <span className="mono text-[11px] text-[var(--muted)]">{port}</span>
+    <Link
+      href={href}
+      className="group surface p-7 hover:border-[var(--lilac)] transition relative overflow-hidden"
+    >
+      <div className="absolute -top-20 -right-20 w-[260px] h-[260px] rounded-full brand-gradient-soft opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className="relative">
+        <span className="mono text-[11px] uppercase tracking-[0.14em] text-[var(--muted-2)]">
+          {badge}
+        </span>
+        <h3 className="text-[24px] font-semibold tracking-tight mt-2">{title}</h3>
+        <p className="mt-3 text-[var(--muted)] leading-relaxed text-[15px]">{blurb}</p>
+        <ul className="mt-5 space-y-2">
+          {bullets.map((b) => (
+            <li
+              key={b}
+              className="flex items-start gap-2.5 text-[13.5px] text-[var(--ink-2)]"
+            >
+              <span className="mt-1.5 w-1 h-1 rounded-full bg-[var(--lilac)] shrink-0" />
+              {b}
+            </li>
+          ))}
+        </ul>
+        <span className="inline-flex items-center gap-1 mt-6 text-[13px] font-medium text-[var(--lilac)]">
+          {cta} →
+        </span>
       </div>
-      <p className="mt-2 text-[14px] text-[var(--muted)] leading-relaxed">{blurb}</p>
+    </Link>
+  );
+}
+
+function Spec({ k, v }: { k: string; v: string }) {
+  return (
+    <div className="surface-soft px-4 py-3">
+      <span className="mono text-[10px] uppercase tracking-[0.12em] text-[var(--muted-2)]">
+        {k}
+      </span>
+      <p className="mt-1 text-[13px] text-[var(--muted)]">{v}</p>
     </div>
   );
 }

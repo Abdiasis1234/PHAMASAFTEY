@@ -21,6 +21,8 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+_ROOT_ENV = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(_ROOT_ENV)
 load_dotenv()
 
 # Patch ag-ui-langgraph's multimodal converter so PDF text shipped via

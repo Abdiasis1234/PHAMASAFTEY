@@ -145,37 +145,52 @@ function parseSemverMinor(v: string): { major: number; minor: number } | null {
   });
 }
 
-// ----------------------- GEMINI_API_KEY set (or OFFLINE=1) -----------------------
+// ----------------------- Auth: API key OR Vertex ADC (or OFFLINE=1) -----------------------
 {
   const offline = process.env.OFFLINE === "1";
-  let gemini = process.env.GEMINI_API_KEY;
+  let gemini = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  let gcpProject = process.env.GOOGLE_CLOUD_PROJECT;
 
-  // Also check agent/.env and .env files
-  if (!gemini && !offline) {
+  if (!gemini && !offline && !gcpProject) {
     for (const envPath of [join(REPO_ROOT, "agent", ".env"), join(REPO_ROOT, ".env")]) {
       if (existsSync(envPath)) {
         const contents = readFileSync(envPath, "utf-8");
-        const match = contents.match(/^\s*GEMINI_API_KEY\s*=\s*(.+)\s*$/m);
-        if (match && match[1].trim() && match[1].trim() !== '""' && match[1].trim() !== "''") {
-          gemini = match[1].trim().replace(/^["']|["']$/g, "");
-          break;
+        const keyMatch = contents.match(/^\s*(?:GEMINI_API_KEY|GOOGLE_API_KEY)\s*=\s*(.+)\s*$/m);
+        const projMatch = contents.match(/^\s*GOOGLE_CLOUD_PROJECT\s*=\s*(.+)\s*$/m);
+        if (keyMatch && keyMatch[1].trim() && keyMatch[1].trim() !== '""') {
+          gemini = keyMatch[1].trim().replace(/^["']|["']$/g, "");
+        }
+        if (projMatch && projMatch[1].trim()) {
+          gcpProject = projMatch[1].trim().replace(/^["']|["']$/g, "");
         }
       }
     }
   }
 
-  const ok = offline || !!gemini;
+  const adcPath = join(
+    process.env.APPDATA || join(process.env.USERPROFILE || "", "AppData", "Roaming"),
+    "gcloud",
+    "application_default_credentials.json",
+  );
+  const hasAdc = existsSync(adcPath);
+  const adcOk = !!gcpProject && hasAdc;
+  const ok = offline || !!gemini || adcOk;
+
   add({
-    name: "GEMINI_API_KEY set",
+    name: "LLM auth configured",
     pass: ok,
     detail: offline
       ? "OFFLINE=1 (key not required)"
       : gemini
-        ? "found in env or agent/.env"
-        : "not set",
+        ? "API key found"
+        : adcOk
+          ? `Vertex ADC + project ${gcpProject}`
+          : hasAdc
+            ? "ADC file found but GOOGLE_CLOUD_PROJECT missing"
+            : "no API key and no ADC",
     hint: ok
       ? undefined
-      : "Get a free-tier key: https://aistudio.google.com/apikey — set in agent/.env, or run with OFFLINE=1 for the built-in /fixed sample dashboard",
+      : "Org blocks API keys? Run scripts/setup-adc.ps1 and set GOOGLE_CLOUD_PROJECT in .env — or OFFLINE=1 for /fixed demo only",
   });
 }
 

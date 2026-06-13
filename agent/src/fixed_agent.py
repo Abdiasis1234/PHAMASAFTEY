@@ -8,12 +8,13 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import TypedDict
+from typing import Any, TypedDict
 
 from copilotkit import CopilotKitMiddleware, a2ui
 from langchain.agents import create_agent
 from langchain.tools import tool
 from langchain_google_genai import ChatGoogleGenerativeAI
+from src.llm import build_gemini_model
 from langgraph.checkpoint.memory import MemorySaver
 
 from src.catalog import CATALOG_ID, CATALOG_PROMPT
@@ -154,10 +155,24 @@ Render the dashboard when:
 # build_fixed_agent never touches the live model). Online behavior is
 # unchanged — the client is built on the first build_fixed_agent() call.
 def _build_model() -> ChatGoogleGenerativeAI:
-    return ChatGoogleGenerativeAI(
-        model=os.getenv("MODEL", "gemini-3.5-flash"),
-        google_api_key=os.getenv("GEMINI_API_KEY"),
-    )
+    return build_gemini_model()
+
+
+class _LazyFixedModel:
+    """Defer Gemini client construction until the fixed agent first invokes."""
+
+    @property
+    def profile(self) -> Any:
+        return _build_model().profile
+
+    def bind_tools(self, *args: Any, **kwargs: Any) -> Any:
+        return _build_model().bind_tools(*args, **kwargs)
+
+    def bind(self, *args: Any, **kwargs: Any) -> Any:
+        return _build_model().bind(*args, **kwargs)
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(_build_model(), name)
 
 
 def build_fixed_agent():
@@ -172,7 +187,7 @@ def build_fixed_agent():
         return build_offline_fixed_agent(render_dashboard, SYSTEM_PROMPT)
 
     return create_agent(
-        model=_build_model(),
+        model=_LazyFixedModel(),
         tools=[render_dashboard],
         # CopilotKitMiddleware forwards frontend tools + agent context (e.g.
         # useAgentContext payloads) to the LLM.

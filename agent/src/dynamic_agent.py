@@ -51,6 +51,7 @@ from langchain.tools import ToolRuntime, tool
 from langchain_core.messages import SystemMessage
 from langchain_core.tools import tool as lc_tool
 from langchain_google_genai import ChatGoogleGenerativeAI
+from src.llm import build_gemini_model
 from langgraph.checkpoint.memory import MemorySaver
 
 from src.catalog import CATALOG_ID, CATALOG_PROMPT
@@ -115,11 +116,7 @@ _RENDER_MODEL: ChatGoogleGenerativeAI | None = None
 def _render_model() -> ChatGoogleGenerativeAI:
     global _RENDER_MODEL
     if _RENDER_MODEL is None:
-        _RENDER_MODEL = ChatGoogleGenerativeAI(
-            model=os.getenv("MODEL", "gemini-3.5-flash"),
-            google_api_key=os.getenv("GEMINI_API_KEY"),
-            temperature=0,
-        )
+        _RENDER_MODEL = build_gemini_model()
     return _RENDER_MODEL
 
 

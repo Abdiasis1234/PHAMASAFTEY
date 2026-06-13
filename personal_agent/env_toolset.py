@@ -81,15 +81,14 @@ class EnvApiToolset(BaseToolset):
     async def get_tools(self, readonly_context: Optional[ReadonlyContext] = None) -> list[BaseTool]:
         fallback: list[BaseTool] = [FunctionTool(call_env_tool)]
         if readonly_context is None:
-            # No session yet (e.g. agent card construction).
             return fallback
         sid = session_id(readonly_context)
         async with httpx.AsyncClient(timeout=10.0) as client:
             resp = await client.get(
                 f"{ENV_API_URL}/sessions/{sid}/tools", headers=_HEADERS
             )
-        resp.raise_for_status()
-        return [EnvApiTool(schema) for schema in resp.json()["tools"]] + fallback
+            resp.raise_for_status()
+            return [EnvApiTool(schema) for schema in resp.json()["tools"]] + fallback
 
     async def close(self) -> None:
         pass

@@ -42,7 +42,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${jakarta.variable} ${splineMono.variable}`}>
       <head>
-        <title>Rho-Bank A2A</title>
+        <title>PhamaSafety</title>
         <link
           rel="icon"
           type="image/svg+xml"

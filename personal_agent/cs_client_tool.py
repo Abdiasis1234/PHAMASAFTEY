@@ -1,6 +1,6 @@
-"""Tool that lets the personal agent talk to the bank's customer service
-agent over A2A, propagating the current session's contextId so both agents
-(and the env) share one conversation identity."""
+"""Tool that lets the personal agent talk to customer service over A2A,
+propagating the current session's contextId so both agents (and the env)
+share one conversation identity."""
 
 import os
 import uuid
@@ -41,10 +41,11 @@ def _text_of_task(task: Task) -> str:
 
 
 async def ask_customer_service(message: str, tool_context: ToolContext) -> str:
-    """Send a message to the bank's customer service agent and return its reply.
+    """Send a structured safety case or question to customer service and return its reply.
 
-    The conversation with customer service persists for this whole session,
-    so you can ask follow-up questions and they will remember the context.
+    Include your extracted case fields (case_type, medicine, symptoms, severity,
+    missing_fields, urgency, summary) so customer service can act quickly.
+    The conversation persists for this whole session — follow-ups are supported.
     """
     outgoing = Message(
         message_id=uuid.uuid4().hex,
@@ -62,4 +63,4 @@ async def ask_customer_service(message: str, tool_context: ToolContext) -> str:
                 reply = _text_of_message(event) or reply
             elif isinstance(event, tuple) and isinstance(event[0], Task):
                 reply = _text_of_task(event[0]) or reply
-    return reply or "[no response from customer service]"
+        return reply or "[no response from customer service]"

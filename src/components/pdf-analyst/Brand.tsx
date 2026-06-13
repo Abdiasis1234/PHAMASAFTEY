@@ -1,4 +1,4 @@
-// A2A Hackathon shell — Rho-Bank agent pair
+// PhamaSafety shell — branding, nav, and workspace chrome
 import Link from "next/link";
 
 export function Logo({ size = 22 }: { size?: number }) {
@@ -14,10 +14,10 @@ export function Logo({ size = 22 }: { size?: number }) {
         }}
         aria-hidden
       >
-        RB
+        PS
       </span>
       <span className="font-semibold tracking-tight text-[var(--ink)] text-[15px]">
-        Rho-Bank A2A
+        PhamaSafety
       </span>
     </div>
   );
@@ -29,9 +29,10 @@ export function SiteNav({
   active?: "home" | "fixed" | "dynamic" | "catalog";
 }) {
   const links: Array<{ href: string; label: string; key: typeof active }> = [
-    { href: "/", label: "A2A overview", key: "home" },
-    { href: "/fixed", label: "UI demo (fixed)", key: "fixed" },
-    { href: "/dynamic", label: "UI demo (dynamic)", key: "dynamic" },
+    { href: "/", label: "Overview", key: "home" },
+    { href: "/fixed", label: "Case intake", key: "fixed" },
+    { href: "/dynamic", label: "Follow-up Q&A", key: "dynamic" },
+    { href: "/catalog", label: "UI catalog", key: "catalog" },
   ];
   return (
     <header className="shrink-0 border-b border-[var(--line)] bg-[var(--surface)]">
@@ -40,7 +41,7 @@ export function SiteNav({
           <Logo size={22} />
           <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-[var(--line)] bg-[var(--surface-soft)] text-[10.5px] uppercase tracking-[0.12em] mono text-[var(--muted)]">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--lilac)]" />
-            A2A :9001 / :9002
+            A2A + A2UI
           </span>
         </Link>
         <nav className="flex items-center gap-1">
@@ -57,14 +58,6 @@ export function SiteNav({
               {l.label}
             </Link>
           ))}
-          <a
-            href="https://github.com/a2anet/a2a-hackathon-template"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ml-2 px-3 py-1.5 rounded-lg text-[13.5px] text-[var(--muted)] hover:text-[var(--ink)]"
-          >
-            Template ↗
-          </a>
         </nav>
       </div>
     </header>
@@ -128,6 +121,41 @@ export function WorkspaceHeader({
         </span>
         <div className="ml-auto flex items-center gap-3">{status}</div>
       </div>
+    </div>
+  );
+}
+
+export function AgentArchitecture() {
+  const agents = [
+    {
+      name: "Personal Agent",
+      port: ":9001",
+      role: "Receives the message, extracts structured case fields, contacts CS via A2A",
+    },
+    {
+      name: "Customer Service Agent",
+      port: ":9002",
+      role: "Policy, verification, env tools; orchestrates research via A2A",
+    },
+    {
+      name: "Research Agent",
+      port: "internal",
+      role: "BM25 + vector KB search; synthesises escalation guidance",
+    },
+  ];
+  return (
+    <div className="grid md:grid-cols-3 gap-3 mt-6">
+      {agents.map((a) => (
+        <div key={a.name} className="surface-soft p-4">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-medium text-[var(--ink)]">{a.name}</span>
+            <span className="mono text-[10px] text-[var(--muted)]">{a.port}</span>
+          </div>
+          <p className="mt-2 text-[13px] text-[var(--muted)] leading-relaxed">
+            {a.role}
+          </p>
+        </div>
+      ))}
     </div>
   );
 }

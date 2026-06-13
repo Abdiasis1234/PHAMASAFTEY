@@ -1,16 +1,17 @@
-# A2A Hackathon Track
+# PhamaSafety — A2A Track
 
-This repo is configured for the **[A2A Interoperability Challenge](https://github.com/a2anet/a2a-hackathon-template)** (Track 1) — a two-agent Rho-Bank system scored by the [a2a-hackathon harness](https://github.com/a2anet/a2a-hackathon).
+PhamaSafety is a **pharmaceutical safety tri-agent system** for the [Google A2A Hackathon](https://hackathon.a2anet.com), built on the [A2A hackathon template](https://github.com/a2anet/a2a-hackathon-template) and scored by the [a2a-hackathon harness](https://github.com/a2anet/a2a-hackathon).
 
-The CopilotKit **Generative UI** demo (`/fixed`, `/dynamic`) remains in the repo as optional Track 2 scaffolding but is **not** the primary dev loop for this track.
+The CopilotKit **Generative UI** demo (`/fixed`, `/dynamic`) runs in parallel as Track 2.
 
 ## Architecture
 
 | Agent | Port | Role |
 |-------|------|------|
-| **personal-agent** | `:9001` | User's banking assistant — user-side env tools, contacts CS via A2A |
-| **cs-agent** | `:9002` | Bank customer service — bank-side env tools, Redis KB (BM25 + vector) |
-| **redis** | `:6379` | Knowledge-base index (698 documents) |
+| **Personal Agent** | `:9001` | Intake — extracts structured safety case fields, user-side env tools, contacts CS via A2A |
+| **CS Agent** | `:9002` | Policy, verification, env tools, Redis KB search, orchestrates research |
+| **Research Agent** | internal | BM25 + vector KB search inside the CS agent (`ask_research_agent`) |
+| **redis** | `:6379` | Knowledge-base index (698 harness docs + 8 pharma safety docs) |
 
 ## Quick start
 
@@ -18,78 +19,47 @@ The CopilotKit **Generative UI** demo (`/fixed`, `/dynamic`) remains in the repo
 
 ```powershell
 copy .env.example .env
-# Set GOOGLE_API_KEY (Vertex AI key from your GCP project)
+# Set GOOGLE_API_KEY / GEMINI_API_KEY (Vertex express key AQ.* or AI Studio key)
+# GOOGLE_GENAI_USE_VERTEXAI=true
 ```
 
-### 2. Run agents
+If your org blocks API keys, use ADC instead — see `scripts/setup-adc.ps1`.
+
+### 2. Run A2A agents (requires Docker)
 
 ```powershell
 docker compose up --build
 ```
 
-### 3. Clone the harness (once, beside this repo)
+### 3. Run Generative UI (optional Track 2)
 
 ```powershell
-cd ..
-git clone https://github.com/a2anet/a2a-hackathon.git
-cd a2a-hackathon
-uv sync
+# Terminal 1 — LangGraph agents
+cd agent
+uv run uvicorn main:app --port 8123
+
+# Terminal 2 — Next.js
+npx next dev -p 3001
 ```
 
-### 4. Smoke test
+Open http://localhost:3001 — case intake at `/fixed`, follow-up Q&A at `/dynamic`.
 
-From the **harness** repo (with the same `GOOGLE_API_KEY` exported):
+### 4. Smoke test (harness)
+
+Clone the harness repo beside this one, then:
 
 ```powershell
-$env:GOOGLE_API_KEY = "your-key"
 uv run a2a-hack smoke --personal-url http://localhost:9001 --cs-url http://localhost:9002
 ```
 
-`smoke` starts the env API on `:8090`, runs one simulated task, prints both conversation legs, every tool call, and the reward.
+## Harness compatibility
 
-### 5. Train split
+The KB includes the full **698-document harness corpus** from the template plus **8 pharma safety documents** in `kb/documents/doc_pharma_*.json`. Agent prompts are customized for pharmaceutical safety cases while preserving harness tool names and compose shape.
 
-```powershell
-uv run a2a-hack run --personal-url http://localhost:9001 --cs-url http://localhost:9002 `
-  --tasks train --save-to results/dev --auto-resume
-uv run tau2 view results/dev
-```
+## Compose services
 
-## Submission rules (summary)
+- `personal-agent` → `:9001`
+- `cs-agent` → `:9002` (runs KB ingest on startup)
+- `redis` → `:6379`
 
-From the [official template](https://github.com/a2anet/a2a-hackathon-template):
-
-- **Model:** `gemini-3.5-flash` (required for marked runs)
-- **Compose shape:** `personal-agent`, `cs-agent`, `redis` — do not rename
-- **contextId:** reuse on every env tool call and every personal→CS A2A message
-- **Submit:** public GitHub repo + API key at [hackathon.a2anet.com](https://hackathon.a2anet.com)
-
-## What's where
-
-```
-personal_agent/   Personal banking assistant (A2A :9001)
-cs_agent/         Customer service + Redis RAG (A2A :9002)
-kb/               policy.md + documents/ (698 JSON docs)
-docker-compose.yml
-agent/            Optional LangGraph A2UI agents (:8123) — Track 2
-src/              Optional Next.js UI — Track 2
-```
-
-## Optional: precompute embeddings
-
-Speeds CS agent startup (requires `GOOGLE_API_KEY`):
-
-```powershell
-cd cs_agent
-$env:KB_DOCUMENTS_DIR = "..\kb\documents"
-$env:KB_EMBEDDINGS_PATH = "..\kb\embeddings.json"
-python precompute_embeddings.py
-```
-
-Without `kb/embeddings.json`, BM25 search still works; vector search embeds on first query when credentials are available.
-
-## References
-
-- [a2a-hackathon-template](https://github.com/a2anet/a2a-hackathon-template) — agent contract
-- [a2a-hackathon](https://github.com/a2anet/a2a-hackathon) — harness CLI
-- [A2A Net Discord](https://a2anet.com/) — community
+When running standalone `docker compose up`, the personal agent uses `CS_AGENT_URL=http://cs-agent:9002`. When running the harness, set `CS_AGENT_URL=http://host.docker.internal:8090/cs-agent` in `.env`.

@@ -20,6 +20,7 @@ from typing import TypedDict
 
 from langchain.tools import tool
 from langchain_google_genai import ChatGoogleGenerativeAI
+from src.llm import build_gemini_model
 
 # We keep the extractor model cheap; this is structured JSON work, not chat.
 # Gemini 3.5 Flash via the native Google Gen AI SDK — same provider as the
@@ -36,11 +37,7 @@ _EXTRACTOR: ChatGoogleGenerativeAI | None = None
 def _extractor() -> ChatGoogleGenerativeAI:
     global _EXTRACTOR
     if _EXTRACTOR is None:
-        _EXTRACTOR = ChatGoogleGenerativeAI(
-            model=os.getenv("MODEL", "gemini-3.5-flash"),
-            google_api_key=os.getenv("GEMINI_API_KEY"),
-            temperature=0,
-        )
+        _EXTRACTOR = build_gemini_model()
     return _EXTRACTOR
 
 

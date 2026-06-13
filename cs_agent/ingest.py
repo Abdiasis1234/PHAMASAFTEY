@@ -1,9 +1,4 @@
-"""Build the Redis knowledge-base index from kb/documents at startup.
-
-Runs before the agent is served (main.py imports it), so the agent card only
-becomes available once the index is ready. Embeddings load from the pre-baked
-cache (kb/embeddings.json) when present, else fall back to live embedding;
-without model credentials the index is BM25-only."""
+"""Build the Redis knowledge-base index from kb/documents at startup."""
 
 import base64
 import json
@@ -19,18 +14,25 @@ from redis.commands.search.index_definition import IndexDefinition, IndexType
 from rag_tools import DOC_PREFIX, EMBEDDING_DIM, KB_INDEX, REDIS_URL, _embed
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
+_DEFAULT_DOCS = _REPO_ROOT / "kb" / "documents"
+_DEFAULT_EMB = _REPO_ROOT / "kb" / "embeddings.json"
 KB_DOCUMENTS_DIR = Path(
-    os.environ.get("KB_DOCUMENTS_DIR", _REPO_ROOT / "kb" / "documents")
+    os.environ.get(
+        "KB_DOCUMENTS_DIR",
+        _DEFAULT_DOCS if _DEFAULT_DOCS.is_dir() else "/app/kb/documents",
+    )
 )
 KB_EMBEDDINGS_PATH = Path(
-    os.environ.get("KB_EMBEDDINGS_PATH", _REPO_ROOT / "kb" / "embeddings.json")
+    os.environ.get(
+        "KB_EMBEDDINGS_PATH",
+        _DEFAULT_EMB if _DEFAULT_EMB.exists() else "/app/kb/embeddings.json",
+    )
 )
 
 EMBED_BATCH_SIZE = 25
 
 
 def load_embedding_cache() -> dict[str, bytes]:
-    """Load pre-baked embedding bytes by doc id (empty dict if no cache)."""
     if not KB_EMBEDDINGS_PATH.exists():
         return {}
     with open(KB_EMBEDDINGS_PATH) as fp:
@@ -39,7 +41,6 @@ def load_embedding_cache() -> dict[str, bytes]:
 
 
 def load_documents() -> list[dict]:
-    """Load all KB documents ({id, title, content})."""
     docs = []
     for path in sorted(KB_DOCUMENTS_DIR.glob("*.json")):
         with open(path) as fp:
@@ -48,7 +49,6 @@ def load_documents() -> list[dict]:
 
 
 def build_index() -> None:
-    """(Re)create the KB index and load every document, embedding if possible."""
     client = redis.Redis.from_url(REDIS_URL, decode_responses=False)
     documents = load_documents()
     if not documents:
@@ -72,7 +72,6 @@ def build_index() -> None:
         definition=IndexDefinition(prefix=[DOC_PREFIX], index_type=IndexType.HASH),
     )
 
-    # Pre-baked cache first; live-embed only the misses (BM25-only if neither).
     cache = load_embedding_cache()
     embedding_bytes: list[bytes | None] = [cache.get(d["id"]) for d in documents]
     misses = [i for i, b in enumerate(embedding_bytes) if b is None]
