@@ -1,3 +1,4 @@
+https://github.com/a2anet/a2a-hackathon-template
 # Pharma Safety Tri-Agent System
 
 A multi-agent customer support and research system built for the Google A2A Hackathon.
