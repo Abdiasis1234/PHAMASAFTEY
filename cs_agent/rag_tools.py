@@ -1,4 +1,11 @@
-"""Knowledge-base search tools backed by Redis (RediSearch)."""
+"""Knowledge-base search tools backed by Redis (RediSearch).
+
+kb_search_bm25: full-text BM25 search (OR-semantics keyword query).
+kb_search_vector: HNSW vector search over gemini-embedding-001 embeddings
+(available only when the index was built with embeddings).
+
+Replies are parsed via execute_command so both the classic array reply and
+the Redis 8 map-style reply work regardless of redis-py version."""
 
 import os
 import re
@@ -17,6 +24,7 @@ _genai_client = None
 
 
 def _get_genai_client():
+    """Reused genai client (one connection pool, not a new one per search)."""
     global _genai_client
     if _genai_client is None:
         from google import genai
@@ -26,8 +34,10 @@ def _get_genai_client():
 
 
 def _embed(texts: list[str]) -> list[list[float]]:
+    """Embed texts with gemini-embedding-001 via google-genai."""
     from google.genai import types
 
+    # Reduced-dim output is unnormalized; the index uses COSINE, so that's fine.
     result = _get_genai_client().models.embed_content(
         model=EMBEDDING_MODEL,
         contents=texts,
@@ -41,6 +51,7 @@ def _decode(value) -> str:
 
 
 def _parse_search_reply(reply) -> list[dict]:
+    """Normalize an FT.SEARCH reply (array or map shape) to result dicts."""
     if isinstance(reply, dict):
         results = reply.get(b"results", reply.get("results")) or []
         out = []
@@ -67,10 +78,11 @@ def _strip_score(docs: list[dict]) -> list[dict]:
 
 
 def kb_search_bm25(query: str, top_k: int = 5) -> list[dict]:
-    """Full-text (BM25) search over the knowledge base.
+    """Full-text (BM25) search over the Rho-Bank knowledge base.
 
     Args:
-        query: Keywords or a short phrase to search for.
+        query: Keywords or a short phrase to search for. Matching is ranked,
+            so extra keywords help rather than hurt.
         top_k: Number of documents to return.
 
     Returns:
@@ -79,6 +91,7 @@ def kb_search_bm25(query: str, top_k: int = 5) -> list[dict]:
     terms = re.findall(r"\w+", query.lower())
     if not terms:
         return []
+    # OR-join: RediSearch defaults to AND, which zeroes out long queries.
     or_query = "|".join(dict.fromkeys(terms))
     reply = _client.execute_command(
         "FT.SEARCH", KB_INDEX, or_query,
@@ -89,7 +102,10 @@ def kb_search_bm25(query: str, top_k: int = 5) -> list[dict]:
 
 
 def kb_search_vector(query: str, top_k: int = 5) -> list[dict]:
-    """Semantic (vector) search over the knowledge base.
+    """Semantic (vector) search over the Rho-Bank knowledge base.
+
+    Better than kb_search_bm25 when the query is a natural-language question
+    rather than exact keywords.
 
     Args:
         query: A natural-language question or description.

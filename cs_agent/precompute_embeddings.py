@@ -1,4 +1,13 @@
-"""Precompute the pre-baked KB embedding cache (kb/embeddings.json)."""
+"""Precompute the pre-baked KB embedding cache (kb/embeddings.json).
+
+Run this once whenever you change kb/documents so the baked vectors stay in
+lockstep with the docs. It embeds every document with the same model/dim the
+agent uses, so ingest.py can load them at startup instead of calling the
+embedding API (instant startup, no per-restart embedding cost). Needs Google
+model credentials (the same GOOGLE_* env the cs-agent uses).
+
+    python precompute_embeddings.py
+"""
 
 import base64
 import json
@@ -15,6 +24,7 @@ EMBED_BATCH_SIZE = 25
 
 
 def main() -> None:
+    """Embed every KB document and write the {doc_id: base64(float32)} cache."""
     documents = load_documents()
     if not documents:
         raise RuntimeError("No KB documents found")

@@ -11,6 +11,6 @@ from ingest import build_index
 
 build_index()
 
-from agent import root_agent  # noqa: E402 (import after the readiness gate)
+from agent import root_agent  # noqa: E402  (import after the readiness gate)
 
 app = to_a2a(root_agent, host=os.environ.get("HOST", "0.0.0.0"), port=int(os.environ.get("PORT", "9002")))
